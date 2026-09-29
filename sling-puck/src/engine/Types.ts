@@ -25,7 +25,28 @@ export interface BoardConfig {
 
 export interface GameState {
   pucks: Puck[];
+  elastics: ElasticBand[];
   board: BoardConfig;
+}
+
+export interface ElasticBand {
+  id: string;
+  /** El elástico de un color solo puede cargar/disparar discos de ese mismo color. */
+  color: PuckColor;
+  /** Posición de reposo del bolsillo (sin estirar). */
+  restPos: Vec2;
+  /** Posición actual del bolsillo: igual a restPos salvo mientras está cargado y se estira. */
+  pouchPos: Vec2;
+  anchorLeft: Vec2;
+  anchorRight: Vec2;
+  /** Distancia máxima desde restPos a la que se puede acercar un disco para engancharlo. */
+  captureRadius: number;
+  /** Distancia máxima de estiramiento desde restPos. */
+  maxStretch: number;
+  /** Multiplicador que convierte el vector de estiramiento en velocidad de disparo. */
+  power: number;
+  /** id del disco actualmente enganchado, o null si está libre. */
+  loadedPuckId: string | null;
 }
 
 export interface PhysicsConfig {
