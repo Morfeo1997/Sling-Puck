@@ -57,3 +57,15 @@ export interface PhysicsConfig {
   /** Restitución (0-1) al rebotar contra muros/bordes. */
   wallRestitution: number;
 }
+
+/**
+ * Contrato que implementa cada modo de juego (clásico, puntos, etc.). Home.tsx puede
+ * mapear una lista de GameMode a rutas/cards sin conocer las reglas de cada uno.
+ */
+export interface GameMode {
+  id: string;
+  label: string;
+  initialState: () => GameState;
+  /** Devuelve el color ganador, o null si la partida sigue en curso. */
+  checkWin: (state: GameState) => PuckColor | null;
+}

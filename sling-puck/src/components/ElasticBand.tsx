@@ -1,8 +1,13 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { gsap } from 'gsap';
 import type { ElasticBand as ElasticBandData } from '../engine/types';
 
 export interface ElasticBandHandle {
+  /**
+   * Sincroniza la banda visual con elastic.pouchPos al instante (sin animar).
+   * Se llama en cada cuadro del game loop mientras no haya un snap() en curso.
+   */
+  update: () => void;
   /** Anima el chasquido de vuelta a reposo. Llamarlo justo cuando el engine dispara el disco. */
   snap: () => void;
 }
@@ -14,11 +19,10 @@ interface ElasticBandProps {
 }
 
 /**
- * La posición del bolsillo mientras se arrastra viene 1:1 del engine (elastic.pouchPos).
- * Al soltar, el engine resetea esa posición al instante — así que el "chasquido" que se
- * ve acá es puramente visual: un tween de GSAP sobre un punto propio del componente,
- * aplicado a mano a los <line> vía refs (no vía props) para no depender del ciclo de
- * render de React en una animación de 60fps.
+ * `elastic` llega como referencia estable (el engine la muta in place, nunca la reemplaza),
+ * así que leer elastic.pouchPos/restPos dentro de update()/snap() siempre da el valor actual,
+ * aunque este componente no vuelva a renderizar. Por eso no hace falta ningún useEffect atado
+ * a props: todo el sincronismo por cuadro es imperativo, disparado desde useGameLoop.
  */
 const ElasticBand = forwardRef<ElasticBandHandle, ElasticBandProps>(function ElasticBand(
   { elastic, width, height },
@@ -38,6 +42,12 @@ const ElasticBand = forwardRef<ElasticBandHandle, ElasticBandProps>(function Ela
   }
 
   useImperativeHandle(ref, () => ({
+    update: () => {
+      if (animating.current) return;
+      visualPouch.current.x = elastic.pouchPos.x;
+      visualPouch.current.y = elastic.pouchPos.y;
+      applyToLines();
+    },
     snap: () => {
       animating.current = true;
       gsap.killTweensOf(visualPouch.current);
@@ -53,15 +63,6 @@ const ElasticBand = forwardRef<ElasticBandHandle, ElasticBandProps>(function Ela
       });
     },
   }));
-
-  // Mientras se arrastra (no hay animación de chasquido en curso), la banda sigue
-  // 1:1 la posición real que calcula el engine.
-  useEffect(() => {
-    if (animating.current) return;
-    visualPouch.current = { x: elastic.pouchPos.x, y: elastic.pouchPos.y };
-    applyToLines();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elastic.pouchPos.x, elastic.pouchPos.y]);
 
   return (
     <svg className="pointer-events-none absolute left-0 top-0" width={width} height={height}>
