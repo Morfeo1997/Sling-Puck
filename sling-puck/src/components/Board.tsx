@@ -4,6 +4,7 @@ import { createClassicState } from '../engine/board';
 import type { GameState, Vec2 } from '../engine/types';
 import { stepPhysics } from '../engine/physics';
 import { useDragLaunch } from '../hooks/useDragLaunch';
+import ElasticBand, { type ElasticBandHandle } from './ElasticBand';
 
 const PHYSICS_DT = 1 / 60;
 
@@ -55,12 +56,13 @@ export default function Board() {
     [board.width, board.height]
   );
 
+  const elasticRefs = useRef<Record<string, ElasticBandHandle | null>>({});
+
   const { onPointerDown, onPointerMove, onPointerUp } = useDragLaunch({
     gameStateRef,
     toBoardCoords,
     onFire: (elasticId) => {
-      // Placeholder: acá enganchamos la animación de "chasquido" cuando exista ElasticBand.tsx.
-      console.debug('dispara', elasticId);
+      elasticRefs.current[elasticId]?.snap();
     },
   });
 
@@ -94,26 +96,17 @@ export default function Board() {
           }}
         />
 
-        {/* Bandas elásticas: dos líneas desde los anclajes hasta el bolsillo actual */}
+        {/* Bandas elásticas */}
         {elastics.map((elastic) => (
-          <svg key={elastic.id} className="pointer-events-none absolute left-0 top-0" width={width} height={height}>
-            <line
-              x1={elastic.anchorLeft.x}
-              y1={elastic.anchorLeft.y}
-              x2={elastic.pouchPos.x}
-              y2={elastic.pouchPos.y}
-              stroke="#d97706"
-              strokeWidth={3}
-            />
-            <line
-              x1={elastic.anchorRight.x}
-              y1={elastic.anchorRight.y}
-              x2={elastic.pouchPos.x}
-              y2={elastic.pouchPos.y}
-              stroke="#d97706"
-              strokeWidth={3}
-            />
-          </svg>
+          <ElasticBand
+            key={elastic.id}
+            ref={(handle) => {
+              elasticRefs.current[elastic.id] = handle;
+            }}
+            elastic={elastic}
+            width={width}
+            height={height}
+          />
         ))}
 
         {/* Discos */}
