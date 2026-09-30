@@ -1,5 +1,5 @@
 import type { GameMode } from './types';
-import { classicMode } from './rules/classic';
+import { classicMode } from './rules/Classic';
 
 /**
  * Un modo nuevo se agrega acá (y en su propia página en pages/) — Home.tsx

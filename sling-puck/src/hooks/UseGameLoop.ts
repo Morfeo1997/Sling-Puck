@@ -1,7 +1,7 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { gsap } from 'gsap';
-import type { GameState } from '../engine/types';
-import { stepPhysics } from '../engine/physics';
+import type { GameState } from '../engine/Types';
+import { stepPhysics } from '../engine/Physics';
 
 interface UseGameLoopOptions {
   /** Ref mutable al estado del juego; el mismo que usan useDragLaunch y los componentes visuales. */

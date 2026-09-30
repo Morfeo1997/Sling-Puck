@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import ClassicMode from './pages/ClassicMode';
-import { classicMode } from './engine/rules/classic';
+import { classicMode } from './engine/rules/Classic';
 
 /**
  * Se monta dentro de <BrowserRouter> en App.tsx. Cada modo nuevo suma una <Route> acá

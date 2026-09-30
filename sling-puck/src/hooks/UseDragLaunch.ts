@@ -1,12 +1,12 @@
 import { useCallback, useRef, type MutableRefObject } from 'react';
-import type { GameState, Puck, Vec2 } from '../engine/types';
+import type { GameState, Puck, Vec2 } from '../engine/Types';
 import {
   isWithinCaptureRadius,
   clampToMaxStretch,
   computeLaunchVelocity,
   stretchDistance,
   MIN_STRETCH_TO_FIRE,
-} from '../engine/elastic';
+} from '../engine/Elastic';
 
 /**
  * Fase 1: el jugador lleva el disco de la mano por el tablero, todavía sin tocar

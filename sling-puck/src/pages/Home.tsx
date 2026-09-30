@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { GAME_MODES } from '../engine/modes';
+import { GAME_MODES } from '../engine/Modes';
 
 export default function Home() {
   return (
