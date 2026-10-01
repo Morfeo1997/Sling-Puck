@@ -1,4 +1,4 @@
-import type { Vec2, ElasticBand } from './types';
+import type { Vec2, ElasticBand, BoardConfig } from './Types';
 
 /** Distancia mínima de estiramiento para que soltar dispare el disco (si es menor, se considera "no tirar"). */
 export const MIN_STRETCH_TO_FIRE = 12;
@@ -27,6 +27,14 @@ export function clampToMaxStretch(restPos: Vec2, desired: Vec2, maxStretch: numb
   return { x: restPos.x + dx * scale, y: restPos.y + dy * scale };
 }
 
+/** Evita que una posición salga del rectángulo del tablero, respetando el radio del disco. */
+export function clampToBoard(pos: Vec2, board: Pick<BoardConfig, 'width' | 'height'>, radius: number): Vec2 {
+  return {
+    x: Math.min(Math.max(pos.x, radius), board.width - radius),
+    y: Math.min(Math.max(pos.y, radius), board.height - radius),
+  };
+}
+
 /** Qué tan estirado está el elástico ahora mismo, en unidades lógicas del tablero. */
 export function stretchDistance(elastic: ElasticBand): number {
   return distance(elastic.pouchPos, elastic.restPos);
@@ -42,4 +50,16 @@ export function computeLaunchVelocity(elastic: ElasticBand): Vec2 {
     x: (elastic.restPos.x - elastic.pouchPos.x) * elastic.power,
     y: (elastic.restPos.y - elastic.pouchPos.y) * elastic.power,
   };
+}
+
+/**
+ * Regla de "soltar": si el estiramiento supera el umbral, devuelve la velocidad de
+ * disparo; si no, null (se soltó sin tirar). En los dos casos resetea el elástico a
+ * reposo. La comparten useDragLaunch (jugador humano) y la IA para no duplicarla.
+ */
+export function releaseElastic(elastic: ElasticBand): Vec2 | null {
+  const velocity = stretchDistance(elastic) >= MIN_STRETCH_TO_FIRE ? computeLaunchVelocity(elastic) : null;
+  elastic.loadedPuckId = null;
+  elastic.pouchPos = { ...elastic.restPos };
+  return velocity;
 }

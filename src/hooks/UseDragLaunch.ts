@@ -3,9 +3,8 @@ import type { GameState, Puck, Vec2 } from '../engine/Types';
 import {
   isWithinCaptureRadius,
   clampToMaxStretch,
-  computeLaunchVelocity,
-  stretchDistance,
-  MIN_STRETCH_TO_FIRE,
+  clampToBoard,
+  releaseElastic,
 } from '../engine/Elastic';
 
 /**
@@ -92,10 +91,7 @@ export function useDragLaunch({
       if (!elastic) return;
       const stretched = clampToMaxStretch(elastic.restPos, pos, elastic.maxStretch);
       // Además del tope del elástico, no dejamos que el disco salga del tablero visible.
-      const clamped: Vec2 = {
-        x: Math.min(Math.max(stretched.x, puck.radius), state.board.width - puck.radius),
-        y: Math.min(Math.max(stretched.y, puck.radius), state.board.height - puck.radius),
-      };
+      const clamped = clampToBoard(stretched, state.board, puck.radius);
       elastic.pouchPos = clamped;
       puck.pos.x = clamped.x;
       puck.pos.y = clamped.y;
@@ -122,17 +118,14 @@ export function useDragLaunch({
     const elastic = state.elastics.find((e) => e.id === drag.elasticId);
     if (!elastic) return;
 
-    if (stretchDistance(elastic) >= MIN_STRETCH_TO_FIRE) {
-      const vel = computeLaunchVelocity(elastic);
-      puck.vel.x = vel.x;
-      puck.vel.y = vel.y;
+    const velocity = releaseElastic(elastic);
+    if (velocity) {
+      puck.vel.x = velocity.x;
+      puck.vel.y = velocity.y;
       onFire?.(elastic.id, puck.id);
     }
-    // Se suelta del elástico y el bolsillo vuelve a su posición de reposo
-    // (la UI puede animar este "chasquido" escuchando onFire, acá el estado
-    // vuelve instantáneo porque la física del elástico en sí no se simula).
-    elastic.loadedPuckId = null;
-    elastic.pouchPos = { ...elastic.restPos };
+    // El reseteo del elástico a reposo ya lo hizo releaseElastic; la UI puede
+    // animar el "chasquido" de vuelta escuchando onFire (ver ElasticBand.snap()).
   }, [gameStateRef, onFire]);
 
   return { onPointerDown, onPointerMove, onPointerUp };

@@ -4,10 +4,12 @@ import { checkWin } from '../engine/rules/Classic';
 import type { GameState, PuckColor, Vec2 } from '../engine/Types';
 import { useDragLaunch } from '../hooks/UseDragLaunch';
 import { useGameLoop } from '../hooks/UseGameLoop';
+import { useAiOpponent } from '../hooks/UseAiOpponent';
 import ElasticBand, { type ElasticBandHandle } from './ElasticBand';
 import WinBanner from './WinBanner';
 
 const PHYSICS_DT = 1 / 60;
+const AI_ELASTIC_ID = 'elastic-black';
 
 export default function Board() {
   // Init perezosa: createClassicState() debe correr una sola vez, no en cada render.
@@ -49,12 +51,22 @@ export default function Board() {
     [board.width, board.height]
   );
 
+  // Mismo callback para el jugador y para la IA: ambos animan el mismo chasquido.
+  const handleFire = (elasticId: string) => {
+    elasticRefs.current[elasticId]?.snap();
+  };
+
   const { onPointerDown, onPointerMove, onPointerUp } = useDragLaunch({
     gameStateRef,
     toBoardCoords,
-    onFire: (elasticId) => {
-      elasticRefs.current[elasticId]?.snap();
-    },
+    onFire: handleFire,
+  });
+
+  const aiOpponent = useAiOpponent({
+    gameStateRef,
+    elasticId: AI_ELASTIC_ID,
+    enabled: winner === null,
+    onFire: handleFire,
   });
 
   useGameLoop({
@@ -74,7 +86,14 @@ export default function Board() {
     },
     onSettle: (state) => {
       const winnerColor = checkWin(state);
-      if (winnerColor) setWinner(winnerColor);
+      if (winnerColor) {
+        setWinner(winnerColor);
+      } else {
+        // Cada vez que el tablero vuelve a quedar quieto (lo haya causado el
+        // jugador o la propia IA), le avisamos a la IA para que programe su
+        // próximo tiro tras un retraso al azar.
+        aiOpponent.scheduleShot();
+      }
     },
   });
 
