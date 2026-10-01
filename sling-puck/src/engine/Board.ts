@@ -1,4 +1,4 @@
-import type { BoardConfig, ElasticBand, GameState, Puck, PuckColor } from './types';
+import type { BoardConfig, ElasticBand, GameState, Puck, PuckColor } from './Types';
 
 export const CLASSIC_BOARD: BoardConfig = {
   width: 480,
@@ -10,6 +10,16 @@ export const CLASSIC_BOARD: BoardConfig = {
 
 const PUCK_RADIUS = 20;
 const PUCKS_PER_SIDE = 6;
+/** Distancia de la fila de discos a la pared trasera. */
+const ROW_MARGIN_FROM_WALL = 80;
+/**
+ * Distancia del reposo del elástico a la pared trasera. Tiene que ser mayor que
+ * ROW_MARGIN_FROM_WALL: así el elástico queda ANTES de la fila de discos (más
+ * cerca del centro), dejando espacio real detrás para cargar tensión al tirar
+ * hacia la pared, en vez de quedar pegado al borde sin margen.
+ */
+const ELASTIC_MARGIN_FROM_WALL = 150;
+const ANCHOR_SLACK = 24; // cuánto más cerca del centro quedan los anclajes respecto al reposo
 
 function makeRow(color: PuckColor, y: number, board: BoardConfig): Puck[] {
   return Array.from({ length: PUCKS_PER_SIDE }, (_, i) => ({
@@ -23,8 +33,8 @@ function makeRow(color: PuckColor, y: number, board: BoardConfig): Puck[] {
 }
 
 function makeElastic(color: PuckColor, side: 'top' | 'bottom', board: BoardConfig): ElasticBand {
-  const restY = side === 'bottom' ? board.height - 20 : 20;
-  const anchorY = side === 'bottom' ? board.height : 0;
+  const restY = side === 'bottom' ? board.height - ELASTIC_MARGIN_FROM_WALL : ELASTIC_MARGIN_FROM_WALL;
+  const anchorY = side === 'bottom' ? restY - ANCHOR_SLACK : restY + ANCHOR_SLACK;
   const cx = board.width / 2;
   return {
     id: `elastic-${color}`,
@@ -33,19 +43,22 @@ function makeElastic(color: PuckColor, side: 'top' | 'bottom', board: BoardConfi
     pouchPos: { x: cx, y: restY },
     anchorLeft: { x: cx - 40, y: anchorY },
     anchorRight: { x: cx + 40, y: anchorY },
-    captureRadius: 45,
-    maxStretch: 260,
-    power: 9,
+    captureRadius: 50,
+    maxStretch: 220,
+    power: 10,
     loadedPuckId: null,
   };
 }
 
-/** Estado inicial del modo clásico: 6 discos por lado y un elástico por color, en su pared trasera. */
+/** Estado inicial del modo clásico: 6 discos por lado y un elástico por color, delante de la fila. */
 export function createClassicState(): GameState {
   const board = CLASSIC_BOARD;
   return {
     board,
-    pucks: [...makeRow('white', board.height - 60, board), ...makeRow('black', 60, board)],
+    pucks: [
+      ...makeRow('white', board.height - ROW_MARGIN_FROM_WALL, board),
+      ...makeRow('black', ROW_MARGIN_FROM_WALL, board),
+    ],
     elastics: [makeElastic('white', 'bottom', board), makeElastic('black', 'top', board)],
   };
 }

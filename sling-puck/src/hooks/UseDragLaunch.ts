@@ -90,7 +90,12 @@ export function useDragLaunch({
       // drag.kind === 'loaded': ahora movemos el bolsillo del elástico, con tope.
       const elastic = state.elastics.find((e) => e.id === drag.elasticId);
       if (!elastic) return;
-      const clamped = clampToMaxStretch(elastic.restPos, pos, elastic.maxStretch);
+      const stretched = clampToMaxStretch(elastic.restPos, pos, elastic.maxStretch);
+      // Además del tope del elástico, no dejamos que el disco salga del tablero visible.
+      const clamped: Vec2 = {
+        x: Math.min(Math.max(stretched.x, puck.radius), state.board.width - puck.radius),
+        y: Math.min(Math.max(stretched.y, puck.radius), state.board.height - puck.radius),
+      };
       elastic.pouchPos = clamped;
       puck.pos.x = clamped.x;
       puck.pos.y = clamped.y;

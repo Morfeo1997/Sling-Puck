@@ -92,10 +92,17 @@ export default function Board() {
       ref={wrapperRef}
       className="relative mx-auto w-full max-w-[420px] touch-none select-none rounded-xl bg-amber-800 shadow-xl"
       style={{ aspectRatio: `${width} / ${height}` }}
-      onPointerDown={(e) => onPointerDown(e.clientX, e.clientY)}
+      onPointerDown={(e) => {
+        // Capturamos el puntero: así seguimos recibiendo move/up aunque el dedo o el
+        // mouse salgan del <div> (el tablero es chico, 420px) — antes, salir del área
+        // disparaba onPointerLeave y soltaba el disco de golpe, cortando en seco el
+        // estiramiento posible del elástico.
+        e.currentTarget.setPointerCapture(e.pointerId);
+        onPointerDown(e.clientX, e.clientY);
+      }}
       onPointerMove={(e) => onPointerMove(e.clientX, e.clientY)}
       onPointerUp={onPointerUp}
-      onPointerLeave={onPointerUp}
+      onPointerCancel={onPointerUp}
     >
       <div className="absolute left-0 top-0 origin-top-left" style={{ width, height, transform: `scale(${scale})` }}>
         {/* Muro central: todo lo que no sea la ranura del medio */}
