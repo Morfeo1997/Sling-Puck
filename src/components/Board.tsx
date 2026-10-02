@@ -83,8 +83,9 @@ export default function Board() {
       for (const elastic of state.elastics) {
         elasticRefs.current[elastic.id]?.update();
       }
-    },
-    onSettle: (state) => {
+      // checkWin es por posición, no por velocidad: se evalúa en cada cuadro para
+      // que la partida termine apenas el último disco cruza, sin esperar a que
+      // todo (incluido lo del rival) quede quieto.
       const winnerColor = checkWin(state);
       if (winnerColor) setWinner(winnerColor);
     },
