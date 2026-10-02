@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
+import { useCallback, useEffect, type MutableRefObject } from 'react';
 import { gsap } from 'gsap';
 import type { GameState } from '../engine/Types';
 import { pickAiShot } from '../engine/Ai';
@@ -7,32 +7,28 @@ import { releaseElastic } from '../engine/Elastic';
 interface UseAiOpponentOptions {
   gameStateRef: MutableRefObject<GameState>;
   elasticId: string;
-  /** En false cancela cualquier tiro programado (por ejemplo, con la partida ya terminada). */
+  /** En false frena a la IA por completo (por ejemplo, con la partida ya terminada). */
   enabled: boolean;
-  minDelayMs?: number;
-  maxDelayMs?: number;
+  /** Cada cuánto intenta tirar, en ms. No espera a que el tablero esté quieto. */
+  intervalMs?: number;
   /** Mismo callback que useDragLaunch: dispara la animación de chasquido del elástico. */
   onFire?: (elasticId: string, puckId: string) => void;
 }
 
 /**
- * Oponente simple. No reacciona solo: hay que llamar a scheduleShot() (típicamente
- * desde onSettle del game loop, y una vez al montar) para que programe un tiro tras
- * un retraso al azar. El "amague" — llevar el disco hasta el bolsillo estirado — es
- * un tween de GSAP sobre puck.pos; como ElasticBand ya lee elastic.pouchPos en cada
- * cuadro (ver su método update()), no hace falta tocar ese componente para que la
- * honda se vea estirándose sola.
+ * Oponente agresivo: intenta un tiro cada `intervalMs`, sin esperar a que el tablero
+ * quede quieto (eso es justamente lo que lo hace sentir más difícil/activo). Si en
+ * ese momento no hay ningún disco propio suelto y quieto, pickAiShot devuelve null y
+ * ese intento no hace nada — no hace falta avisarle desde afuera, se maneja solo con
+ * su propio temporizador.
  */
 export function useAiOpponent({
   gameStateRef,
   elasticId,
   enabled,
-  minDelayMs = 500,
-  maxDelayMs = 1300,
+  intervalMs = 2000,
   onFire,
 }: UseAiOpponentOptions) {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
   const takeShot = useCallback(() => {
     const state = gameStateRef.current;
     const plan = pickAiShot(state, elasticId);
@@ -68,20 +64,9 @@ export function useAiOpponent({
     });
   }, [gameStateRef, elasticId, onFire]);
 
-  const scheduleShot = useCallback(() => {
-    if (!enabled) return;
-    clearTimeout(timeoutRef.current);
-    const delay = minDelayMs + Math.random() * (maxDelayMs - minDelayMs);
-    timeoutRef.current = setTimeout(takeShot, delay);
-  }, [enabled, minDelayMs, maxDelayMs, takeShot]);
-
-  // Primer tiro al montar (o al reactivarse); el resto se programa desde afuera
-  // (onSettle) cada vez que el tablero vuelve a quedar quieto.
   useEffect(() => {
-    if (enabled) scheduleShot();
-    return () => clearTimeout(timeoutRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
-
-  return { scheduleShot };
+    if (!enabled) return;
+    const id = setInterval(takeShot, intervalMs);
+    return () => clearInterval(id);
+  }, [enabled, intervalMs, takeShot]);
 }

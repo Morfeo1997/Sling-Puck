@@ -62,7 +62,7 @@ export default function Board() {
     onFire: handleFire,
   });
 
-  const aiOpponent = useAiOpponent({
+  useAiOpponent({
     gameStateRef,
     elasticId: AI_ELASTIC_ID,
     enabled: winner === null,
@@ -86,14 +86,7 @@ export default function Board() {
     },
     onSettle: (state) => {
       const winnerColor = checkWin(state);
-      if (winnerColor) {
-        setWinner(winnerColor);
-      } else {
-        // Cada vez que el tablero vuelve a quedar quieto (lo haya causado el
-        // jugador o la propia IA), le avisamos a la IA para que programe su
-        // próximo tiro tras un retraso al azar.
-        aiOpponent.scheduleShot();
-      }
+      if (winnerColor) setWinner(winnerColor);
     },
   });
 
