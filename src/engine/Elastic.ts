@@ -1,4 +1,4 @@
-import type { Vec2, ElasticBand, BoardConfig } from './Types';
+import type { Vec2, ElasticBand, BoardConfig } from './types';
 
 /** Distancia mínima de estiramiento para que soltar dispare el disco (si es menor, se considera "no tirar"). */
 export const MIN_STRETCH_TO_FIRE = 12;

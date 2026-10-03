@@ -1,6 +1,6 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { gsap } from 'gsap';
-import type { GameState } from '../engine/Types';
+import type { GameState } from '../engine/types';
 import { stepPhysics } from '../engine/Physics';
 
 interface UseGameLoopOptions {

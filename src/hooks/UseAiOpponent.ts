@@ -1,6 +1,6 @@
 import { useCallback, useEffect, type MutableRefObject } from 'react';
 import { gsap } from 'gsap';
-import type { GameState } from '../engine/Types';
+import type { GameState } from '../engine/types';
 import { pickAiShot } from '../engine/Ai';
 import { releaseElastic } from '../engine/Elastic';
 

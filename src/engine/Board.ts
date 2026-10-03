@@ -1,4 +1,4 @@
-import type { BoardConfig, ElasticBand, GameState, Puck, PuckColor } from './Types';
+import type { BoardConfig, ElasticBand, GameState, Puck, PuckColor } from './types';
 
 export const CLASSIC_BOARD: BoardConfig = {
   width: 480,

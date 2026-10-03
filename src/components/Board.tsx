@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClassicState } from '../engine/Board';
 import { checkWin } from '../engine/rules/Classic';
-import type { GameState, PuckColor, Vec2 } from '../engine/Types';
+import type { GameState, PuckColor, Vec2 } from '../engine/types';
 import { useDragLaunch } from '../hooks/UseDragLaunch';
 import { useGameLoop } from '../hooks/UseGameLoop';
 import { useAiOpponent } from '../hooks/UseAiOpponent';

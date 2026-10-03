@@ -1,5 +1,5 @@
 import { useCallback, useRef, type MutableRefObject } from 'react';
-import type { GameState, Puck, Vec2 } from '../engine/Types';
+import type { GameState, Puck, Vec2 } from '../engine/types';
 import {
   isWithinCaptureRadius,
   clampToMaxStretch,

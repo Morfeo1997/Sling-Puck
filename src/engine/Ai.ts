@@ -1,4 +1,4 @@
-import type { GameState, Vec2 } from './Types';
+import type { GameState, Vec2 } from './types';
 import { clampToMaxStretch, clampToBoard } from './Elastic';
 
 export interface AiShotPlan {

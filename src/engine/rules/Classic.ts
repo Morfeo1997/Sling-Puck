@@ -1,4 +1,4 @@
-import type { GameMode, GameState, PuckColor } from '../Types';
+import type { GameMode, GameState, PuckColor } from '../types';
 import { createClassicState } from '../Board';
 
 /**
