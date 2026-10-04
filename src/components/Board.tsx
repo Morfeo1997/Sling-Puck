@@ -5,11 +5,16 @@ import type { GameState, PuckColor, Vec2 } from '../engine/types';
 import { useDragLaunch } from '../hooks/UseDragLaunch';
 import { useGameLoop } from '../hooks/UseGameLoop';
 import { useAiOpponent } from '../hooks/UseAiOpponent';
+import { useSoundEffects } from '../hooks/UseSoundEffects';
 import ElasticBand, { type ElasticBandHandle } from './ElasticBand';
 import WinBanner from './WinBanner';
 
 const PHYSICS_DT = 1 / 60;
 const AI_ELASTIC_ID = 'elastic-black';
+// Dos discos apenas rozándose (en reposo, uno contra otro) siguen generando eventos
+// de colisión cuadro a cuadro con velocidad de impacto casi nula — este umbral evita
+// que eso dispare sonido en bucle.
+const MIN_IMPACT_FOR_SOUND = 25;
 
 export default function Board() {
   // Init perezosa: createClassicState() debe correr una sola vez, no en cada render.
@@ -51,14 +56,22 @@ export default function Board() {
     [board.width, board.height]
   );
 
-  // Mismo callback para el jugador y para la IA: ambos animan el mismo chasquido.
+  const { playHit, playGrab, playRelease } = useSoundEffects();
+
+  // Mismos callbacks para el jugador y para la IA: ambos animan el mismo chasquido
+  // y suenan igual, estén controlados por un dedo o por useAiOpponent.
+  const handleLoad = () => {
+    playGrab();
+  };
   const handleFire = (elasticId: string) => {
     elasticRefs.current[elasticId]?.snap();
+    playRelease();
   };
 
   const { onPointerDown, onPointerMove, onPointerUp } = useDragLaunch({
     gameStateRef,
     toBoardCoords,
+    onLoad: handleLoad,
     onFire: handleFire,
   });
 
@@ -66,6 +79,7 @@ export default function Board() {
     gameStateRef,
     elasticId: AI_ELASTIC_ID,
     enabled: winner === null,
+    onLoad: handleLoad,
     onFire: handleFire,
   });
 
@@ -73,7 +87,7 @@ export default function Board() {
     gameStateRef,
     dt: PHYSICS_DT,
     paused: winner !== null,
-    onFrame: (state) => {
+    onFrame: (state, frame) => {
       for (const puck of state.pucks) {
         const el = puckRefs.current[puck.id];
         if (!el) continue;
@@ -82,6 +96,9 @@ export default function Board() {
       }
       for (const elastic of state.elastics) {
         elasticRefs.current[elastic.id]?.update();
+      }
+      for (const collision of frame.collisions) {
+        if (collision.impactSpeed > MIN_IMPACT_FOR_SOUND) playHit();
       }
       // checkWin es por posición, no por velocidad: se evalúa en cada cuadro para
       // que la partida termine apenas el último disco cruza, sin esperar a que

@@ -11,6 +11,8 @@ interface UseAiOpponentOptions {
   enabled: boolean;
   /** Cada cuánto intenta tirar, en ms. No espera a que el tablero esté quieto. */
   intervalMs?: number;
+  /** Se llama cuando la IA "engancha" un disco, justo antes de empezar el amague. */
+  onLoad?: (elasticId: string, puckId: string) => void;
   /** Mismo callback que useDragLaunch: dispara la animación de chasquido del elástico. */
   onFire?: (elasticId: string, puckId: string) => void;
 }
@@ -27,6 +29,7 @@ export function useAiOpponent({
   elasticId,
   enabled,
   intervalMs = 2000,
+  onLoad,
   onFire,
 }: UseAiOpponentOptions) {
   const takeShot = useCallback(() => {
@@ -42,6 +45,7 @@ export function useAiOpponent({
     // física (queda "frozen"), solo lo mueve el tween.
     puck.frozen = true;
     elastic.loadedPuckId = puck.id;
+    onLoad?.(elastic.id, puck.id);
 
     gsap.to(puck.pos, {
       x: plan.pouchPos.x,
@@ -62,7 +66,7 @@ export function useAiOpponent({
         }
       },
     });
-  }, [gameStateRef, elasticId, onFire]);
+  }, [gameStateRef, elasticId, onLoad, onFire]);
 
   useEffect(() => {
     if (!enabled) return;

@@ -83,12 +83,23 @@ function resolveCenterWall(puck: Puck, board: BoardConfig, cfg: PhysicsConfig): 
   }
 }
 
+/** Un choque disco-disco ocurrido en este cuadro. La UI lo usa para disparar sonido. */
+export interface CollisionEvent {
+  aId: string;
+  bId: string;
+  /** Velocidad relativa en el impacto — útil para variar volumen o elegir un sonido más "fuerte". */
+  impactSpeed: number;
+}
+
 /**
  * Colisión elástica (masas iguales) entre dos discos, con separación de solapamiento.
- * Si alguno está `frozen` (lo está arrastrando el jugador), no se desplaza ni cambia su
- * velocidad — actúa como un obstáculo fijo para el otro disco.
+ * Si alguno está `frozen` (lo está arrastrando el jugador o lo tiene cargado la IA), no
+ * se desplaza ni cambia su velocidad — actúa como un obstáculo fijo para el otro disco.
+ * Devuelve cada choque detectado, para que la UI (no el engine) decida qué sonido tocar.
  */
-function resolvePuckCollisions(pucks: Puck[]): void {
+function resolvePuckCollisions(pucks: Puck[]): CollisionEvent[] {
+  const events: CollisionEvent[] = [];
+
   for (let i = 0; i < pucks.length; i++) {
     for (let j = i + 1; j < pucks.length; j++) {
       const a = pucks[i];
@@ -112,6 +123,7 @@ function resolvePuckCollisions(pucks: Puck[]): void {
 
       const avn = a.vel.x * nx + a.vel.y * ny;
       const bvn = b.vel.x * nx + b.vel.y * ny;
+      const impactSpeed = Math.abs(avn - bvn);
 
       if (!a.frozen) {
         a.vel.x += (bvn - avn) * nx;
@@ -124,20 +136,29 @@ function resolvePuckCollisions(pucks: Puck[]): void {
 
       a.flash = 1;
       b.flash = 1;
+      events.push({ aId: a.id, bId: b.id, impactSpeed });
     }
   }
+
+  return events;
+}
+
+export interface StepResult {
+  /** true si algún disco sigue en movimiento (útil para saber cuándo evaluar la condición de victoria). */
+  moving: boolean;
+  /** Choques disco-disco ocurridos en este cuadro, para que la UI dispare sonido. */
+  collisions: CollisionEvent[];
 }
 
 /**
  * Avanza el estado del juego un paso de tiempo `dt` (segundos). Muta `state.pucks` in place
- * por performance (pensado para llamarse ~60 veces por segundo desde el game loop) y devuelve
- * `true` si algún disco sigue en movimiento (útil para saber cuándo evaluar la condición de victoria).
+ * por performance (pensado para llamarse ~60 veces por segundo desde el game loop).
  */
 export function stepPhysics(
   state: GameState,
   dt: number,
   cfg: PhysicsConfig = DEFAULT_PHYSICS
-): boolean {
+): StepResult {
   for (const puck of state.pucks) {
     if (puck.frozen) continue;
     integratePuck(puck, dt, cfg);
@@ -146,11 +167,13 @@ export function stepPhysics(
     if (puck.flash > 0) puck.flash = Math.max(0, puck.flash - 0.04);
   }
 
-  resolvePuckCollisions(state.pucks);
+  const collisions = resolvePuckCollisions(state.pucks);
 
   // Las colisiones pueden haber puesto en movimiento un disco que estaba
   // quieto, así que "moving" se evalúa recién acá, con el estado ya resuelto.
-  return state.pucks.some((p) => !p.frozen && Math.hypot(p.vel.x, p.vel.y) > 0.5);
+  const moving = state.pucks.some((p) => !p.frozen && Math.hypot(p.vel.x, p.vel.y) > 0.5);
+
+  return { moving, collisions };
 }
 
 /** true cuando ningún disco (que no esté siendo arrastrado) se está moviendo. */

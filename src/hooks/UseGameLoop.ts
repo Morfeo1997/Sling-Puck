@@ -1,7 +1,12 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { gsap } from 'gsap';
 import type { GameState } from '../engine/types';
-import { stepPhysics } from '../engine/Physics';
+import { stepPhysics, type CollisionEvent } from '../engine/Physics';
+
+interface FrameInfo {
+  /** Choques disco-disco ocurridos en este cuadro (puede estar vacío la mayoría de las veces). */
+  collisions: CollisionEvent[];
+}
 
 interface UseGameLoopOptions {
   /** Ref mutable al estado del juego; el mismo que usan useDragLaunch y los componentes visuales. */
@@ -9,9 +14,10 @@ interface UseGameLoopOptions {
   /**
    * Se llama en cada cuadro (~60/s) después de avanzar la física, para que el consumidor
    * actualice el DOM a mano (vía refs) en vez de pasar por setState — evita re-renderizar
-   * todo el árbol de discos 60 veces por segundo.
+   * todo el árbol de discos 60 veces por segundo. `frame.collisions` trae los choques de
+   * este cuadro puntual (no acumulados), pensado para disparar sonido u otros efectos.
    */
-  onFrame: (state: GameState) => void;
+  onFrame: (state: GameState, frame: FrameInfo) => void;
   /**
    * Se llama una única vez por cada vez que todos los discos pasan de "en movimiento" a
    * "quietos" — el momento correcto para evaluar la condición de victoria de un modo.
@@ -46,8 +52,8 @@ export function useGameLoop({ gameStateRef, onFrame, onSettle, dt = 1 / 60, paus
 
     const tick = () => {
       const state = gameStateRef.current;
-      const moving = stepPhysics(state, dt);
-      onFrameRef.current(state);
+      const { moving, collisions } = stepPhysics(state, dt);
+      onFrameRef.current(state, { collisions });
       if (wasMovingRef.current && !moving) {
         onSettleRef.current?.(state);
       }
