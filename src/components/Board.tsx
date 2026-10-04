@@ -106,6 +106,11 @@ export default function Board() {
       className="relative mx-auto w-full max-w-[420px] touch-none select-none rounded-xl bg-amber-800 shadow-xl"
       style={{ aspectRatio: `${width} / ${height}` }}
       onPointerDown={(e) => {
+        // Con un ganador ya decidido, el WinBanner (su botón "Jugar de nuevo" incluido)
+        // vive dentro de este mismo <div>. Si igual capturáramos el puntero acá, el
+        // navegador no llega a sintetizar el "click" sobre el botón — por eso cortamos
+        // antes de hacer nada cuando la partida ya terminó.
+        if (winner) return;
         // Capturamos el puntero: así seguimos recibiendo move/up aunque el dedo o el
         // mouse salgan del <div> (el tablero es chico, 420px) — antes, salir del área
         // disparaba onPointerLeave y soltaba el disco de golpe, cortando en seco el
