@@ -1,5 +1,6 @@
 import type { GameState, Vec2 } from './types';
-import { clampToMaxStretch, clampToBoard } from './Elastic';
+import { clampToMaxStretch } from './Elastic';
+import { clampToOwnHalf } from './Geometry';
 
 export interface AiShotPlan {
   puckId: string;
@@ -41,7 +42,7 @@ export function pickAiShot(
     y: elastic.restPos.y + pullSign * pullStrength,
   };
   const stretched = clampToMaxStretch(elastic.restPos, desired, elastic.maxStretch);
-  const pouchPos = clampToBoard(stretched, state.board, puck.radius);
+  const pouchPos = clampToOwnHalf(stretched, elastic.color, state.board, puck.radius);
 
   return { puckId: puck.id, pouchPos };
 }

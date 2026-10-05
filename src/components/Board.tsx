@@ -70,6 +70,7 @@ export default function Board() {
 
   const { onPointerDown, onPointerMove, onPointerUp } = useDragLaunch({
     gameStateRef,
+    playerColor: 'white',
     toBoardCoords,
     onLoad: handleLoad,
     onFire: handleFire,

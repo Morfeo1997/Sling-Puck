@@ -1,4 +1,4 @@
-import type { Vec2, ElasticBand, BoardConfig } from './types';
+import type { Vec2, ElasticBand } from './types';
 
 /** Distancia mínima de estiramiento para que soltar dispare el disco (si es menor, se considera "no tirar"). */
 export const MIN_STRETCH_TO_FIRE = 12;
@@ -25,14 +25,6 @@ export function clampToMaxStretch(restPos: Vec2, desired: Vec2, maxStretch: numb
   }
   const scale = maxStretch / dist;
   return { x: restPos.x + dx * scale, y: restPos.y + dy * scale };
-}
-
-/** Evita que una posición salga del rectángulo del tablero, respetando el radio del disco. */
-export function clampToBoard(pos: Vec2, board: Pick<BoardConfig, 'width' | 'height'>, radius: number): Vec2 {
-  return {
-    x: Math.min(Math.max(pos.x, radius), board.width - radius),
-    y: Math.min(Math.max(pos.y, radius), board.height - radius),
-  };
 }
 
 /** Qué tan estirado está el elástico ahora mismo, en unidades lógicas del tablero. */
