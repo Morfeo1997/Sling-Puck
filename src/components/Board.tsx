@@ -16,7 +16,12 @@ const AI_ELASTIC_ID = 'elastic-black';
 // que eso dispare sonido en bucle.
 const MIN_IMPACT_FOR_SOUND = 25;
 
-export default function Board() {
+interface BoardProps {
+  /** Se llama una sola vez por partida, cuando se decide el ganador — para llevar el marcador. */
+  onWin?: (winner: PuckColor) => void;
+}
+
+export default function Board({ onWin }: BoardProps) {
   // Init perezosa: createClassicState() debe correr una sola vez, no en cada render.
   const gameStateRef = useRef<GameState>(null!);
   if (gameStateRef.current === null) {
@@ -27,6 +32,10 @@ export default function Board() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [winner, setWinner] = useState<PuckColor | null>(null);
+  // checkWin se evalúa en cada cuadro (ver onFrame) y seguiría dando positivo varios
+  // cuadros seguidos hasta que `paused` corte el loop — este ref evita repetir el
+  // sonido y el onWin() de más.
+  const announcedRef = useRef(false);
 
   // Refs a los nodos reales: el game loop los mueve a mano, sin pasar por setState.
   const puckRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -56,7 +65,7 @@ export default function Board() {
     [board.width, board.height]
   );
 
-  const { playHit, playGrab, playRelease } = useSoundEffects();
+  const { playHit, playGrab, playRelease, playVictory, playDefeat } = useSoundEffects();
 
   // Mismos callbacks para el jugador y para la IA: ambos animan el mismo chasquido
   // y suenan igual, estén controlados por un dedo o por useAiOpponent.
@@ -105,12 +114,19 @@ export default function Board() {
       // que la partida termine apenas el último disco cruza, sin esperar a que
       // todo (incluido lo del rival) quede quieto.
       const winnerColor = checkWin(state);
-      if (winnerColor) setWinner(winnerColor);
+      if (winnerColor && !announcedRef.current) {
+        announcedRef.current = true;
+        if (winnerColor === 'white') playVictory();
+        else playDefeat();
+        onWin?.(winnerColor);
+        setWinner(winnerColor);
+      }
     },
   });
 
   const handleRestart = () => {
     gameStateRef.current = createClassicState();
+    announcedRef.current = false;
     setWinner(null);
   };
 
