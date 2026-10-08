@@ -28,13 +28,30 @@ interface UseDragLaunchOptions {
   onLoad?: (elasticId: string, puckId: string) => void;
 }
 
-function findLoosePuckAt(pucks: Puck[], pos: Vec2, color: PuckColor): Puck | undefined {
+/**
+ * Velocidad máxima (unidades/s) a la que todavía se puede agarrar un disco. Antes se
+ * exigía velocidad exactamente 0, pero la física solo la clava en 0 al bajar de
+ * minVelocity, así que un disco rebotando casi imperceptiblemente tardaba segundos en
+ * poder agarrarse. Subilo si lo querés aún más permisivo (Infinity = agarrar siempre).
+ */
+const MAX_GRAB_SPEED = 150;
+
+function findLoosePuckAt(
+  pucks: Puck[],
+  pos: Vec2,
+  color: PuckColor,
+  board: GameState['board']
+): Puck | undefined {
+  const midY = board.height / 2;
   return pucks.find(
     (p) =>
       p.color === color &&
       !p.frozen &&
-      p.vel.x === 0 &&
-      p.vel.y === 0 &&
+      Math.hypot(p.vel.x, p.vel.y) <= MAX_GRAB_SPEED &&
+      // Solo los que siguen en la mitad propia: con la regla relajada, un disco que
+      // acaba de cruzar y aún se desliza podría agarrarse y "teletransportarse" de
+      // vuelta por clampToOwnHalf.
+      (color === 'white' ? p.pos.y > midY : p.pos.y < midY) &&
       Math.hypot(p.pos.x - pos.x, p.pos.y - pos.y) < p.radius + 8
   );
 }
@@ -51,8 +68,14 @@ export function useDragLaunch({
   const onPointerDown = useCallback(
     (clientX: number, clientY: number) => {
       const pos = toBoardCoords(clientX, clientY);
-      const puck = findLoosePuckAt(gameStateRef.current.pucks, pos, playerColor);
+      const state = gameStateRef.current;
+      const puck = findLoosePuckAt(state.pucks, pos, playerColor, state.board);
       if (!puck) return;
+      // Si todavía se estaba deslizando, lo frenamos al agarrarlo: mientras está
+      // "frozen" la física no lo integra, pero su velocidad vieja seguiría contando
+      // en las colisiones y lo haría salir disparado al soltarlo sin usar el elástico.
+      puck.vel.x = 0;
+      puck.vel.y = 0;
       puck.frozen = true;
       dragRef.current = { kind: 'carrying', puckId: puck.id };
     },
