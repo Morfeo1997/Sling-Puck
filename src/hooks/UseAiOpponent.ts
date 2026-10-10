@@ -1,12 +1,15 @@
 import { useCallback, useEffect, type MutableRefObject } from 'react';
 import { gsap } from 'gsap';
-import type { GameState } from '../engine/types';
-import { pickAiShot } from '../engine/Ai';
+import type { GameState, Side } from '../engine/types';
+import type { AiShotPlan } from '../engine/Ai';
 import { releaseElastic } from '../engine/Elastic';
 
 interface UseAiOpponentOptions {
   gameStateRef: MutableRefObject<GameState>;
-  elasticId: string;
+  /** Lado que controla la IA: su elástico y sus discos. */
+  side: Side;
+  /** Estrategia de tiro del modo (ver GameMode.pickAiShot). */
+  pickShot: (state: GameState, side: Side) => AiShotPlan | null;
   /** En false frena a la IA por completo (por ejemplo, con la partida ya terminada). */
   enabled: boolean;
   /** Cada cuánto intenta tirar, en ms. No espera a que el tablero esté quieto. */
@@ -20,13 +23,13 @@ interface UseAiOpponentOptions {
 /**
  * Oponente agresivo: intenta un tiro cada `intervalMs`, sin esperar a que el tablero
  * quede quieto (eso es justamente lo que lo hace sentir más difícil/activo). Si en
- * ese momento no hay ningún disco propio suelto y quieto, pickAiShot devuelve null y
- * ese intento no hace nada — no hace falta avisarle desde afuera, se maneja solo con
- * su propio temporizador.
+ * ese momento la estrategia no encuentra tiro posible (devuelve null), ese intento no
+ * hace nada — se maneja solo con su propio temporizador.
  */
 export function useAiOpponent({
   gameStateRef,
-  elasticId,
+  side,
+  pickShot,
   enabled,
   intervalMs = 2000,
   onLoad,
@@ -34,10 +37,10 @@ export function useAiOpponent({
 }: UseAiOpponentOptions) {
   const takeShot = useCallback(() => {
     const state = gameStateRef.current;
-    const plan = pickAiShot(state, elasticId);
+    const plan = pickShot(state, side);
     if (!plan) return;
 
-    const elastic = state.elastics.find((e) => e.id === elasticId);
+    const elastic = state.elastics.find((e) => e.side === side);
     const puck = state.pucks.find((p) => p.id === plan.puckId);
     if (!elastic || !puck) return;
 
@@ -66,7 +69,7 @@ export function useAiOpponent({
         }
       },
     });
-  }, [gameStateRef, elasticId, onLoad, onFire]);
+  }, [gameStateRef, side, pickShot, onLoad, onFire]);
 
   useEffect(() => {
     if (!enabled) return;

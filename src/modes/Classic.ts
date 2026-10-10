@@ -1,5 +1,5 @@
 import type { GameMode, GameState, PuckColor } from '../types';
-import { createClassicState } from '../Board';
+import { createClassicState } from '../engine/Board';
 
 /**
  * Gana quien deja su propia mitad del tablero sin discos de su color — no importa

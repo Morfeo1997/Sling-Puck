@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { GAME_MODES } from '../engine/Modes';
+import { GAME_MODES } from '../modes/Registry';
 
 export default function Home() {
   return (
@@ -15,6 +15,7 @@ export default function Home() {
             className="rounded-xl bg-amber-700 px-4 py-3 text-center font-semibold text-white shadow transition hover:bg-amber-600 active:scale-[0.98]"
           >
             {mode.label}
+            <span className="mt-0.5 block text-xs font-normal opacity-80">{mode.description}</span>
           </Link>
         ))}
       </nav>

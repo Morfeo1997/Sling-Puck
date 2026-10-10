@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createClassicState } from '../engine/Board';
-import { checkWin } from '../engine/rules/Classic';
-import type { GameState, PuckColor, Vec2 } from '../engine/types';
+import { oppositeSide } from '../engine/Sides';
+import type { GameState, Side, Vec2 } from '../engine/types';
+import type { FinishedOutcome, GameMode } from '../modes/Types';
 import { useDragLaunch } from '../hooks/UseDragLaunch';
 import { useGameLoop } from '../hooks/UseGameLoop';
 import { useAiOpponent } from '../hooks/UseAiOpponent';
@@ -10,31 +10,36 @@ import ElasticBand, { type ElasticBandHandle } from './ElasticBand';
 import WinBanner from './WinBanner';
 
 const PHYSICS_DT = 1 / 60;
-const AI_ELASTIC_ID = 'elastic-black';
 // Dos discos apenas rozándose (en reposo, uno contra otro) siguen generando eventos
 // de colisión cuadro a cuadro con velocidad de impacto casi nula — este umbral evita
 // que eso dispare sonido en bucle.
 const MIN_IMPACT_FOR_SOUND = 25;
 
 interface BoardProps {
+  /** Modo que se juega: define el estado inicial, la condición de victoria, la propiedad y la IA. */
+  mode: GameMode;
+  /** Lado que controla el jugador humano; la IA toma el opuesto. */
+  humanSide: Side;
   /** Se llama una sola vez por partida, cuando se decide el ganador — para llevar el marcador. */
-  onWin?: (winner: PuckColor) => void;
+  onFinish?: (outcome: FinishedOutcome) => void;
 }
 
-export default function Board({ onWin }: BoardProps) {
-  // Init perezosa: createClassicState() debe correr una sola vez, no en cada render.
+export default function Board({ mode, humanSide, onFinish }: BoardProps) {
+  const aiSide = oppositeSide(humanSide);
+
+  // Init perezosa: el estado inicial debe crearse una sola vez, no en cada render.
   const gameStateRef = useRef<GameState>(null!);
   if (gameStateRef.current === null) {
-    gameStateRef.current = createClassicState();
+    gameStateRef.current = mode.createInitialState();
   }
   const board = gameStateRef.current.board;
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-  const [winner, setWinner] = useState<PuckColor | null>(null);
-  // checkWin se evalúa en cada cuadro (ver onFrame) y seguiría dando positivo varios
-  // cuadros seguidos hasta que `paused` corte el loop — este ref evita repetir el
-  // sonido y el onWin() de más.
+  const [outcome, setOutcome] = useState<FinishedOutcome | null>(null);
+  // mode.evaluate se llama en cada cuadro (ver onFrame) y seguiría dando "terminada"
+  // varios cuadros seguidos hasta que `paused` corte el loop — este ref evita repetir
+  // el sonido y el onFinish() de más.
   const announcedRef = useRef(false);
 
   // Refs a los nodos reales: el game loop los mueve a mano, sin pasar por setState.
@@ -79,7 +84,8 @@ export default function Board({ onWin }: BoardProps) {
 
   const { onPointerDown, onPointerMove, onPointerUp } = useDragLaunch({
     gameStateRef,
-    playerColor: 'white',
+    playerSide: humanSide,
+    canGrab: mode.canGrab,
     toBoardCoords,
     onLoad: handleLoad,
     onFire: handleFire,
@@ -87,8 +93,9 @@ export default function Board({ onWin }: BoardProps) {
 
   useAiOpponent({
     gameStateRef,
-    elasticId: AI_ELASTIC_ID,
-    enabled: winner === null,
+    side: aiSide,
+    pickShot: mode.pickAiShot,
+    enabled: outcome === null,
     onLoad: handleLoad,
     onFire: handleFire,
   });
@@ -96,7 +103,7 @@ export default function Board({ onWin }: BoardProps) {
   useGameLoop({
     gameStateRef,
     dt: PHYSICS_DT,
-    paused: winner !== null,
+    paused: outcome !== null,
     onFrame: (state, frame) => {
       for (const puck of state.pucks) {
         const el = puckRefs.current[puck.id];
@@ -110,24 +117,23 @@ export default function Board({ onWin }: BoardProps) {
       for (const collision of frame.collisions) {
         if (collision.impactSpeed > MIN_IMPACT_FOR_SOUND) playHit();
       }
-      // checkWin es por posición, no por velocidad: se evalúa en cada cuadro para
-      // que la partida termine apenas el último disco cruza, sin esperar a que
-      // todo (incluido lo del rival) quede quieto.
-      const winnerColor = checkWin(state);
-      if (winnerColor && !announcedRef.current) {
+      // El modo decide cuándo terminó la partida. Se evalúa en cada cuadro (no solo
+      // cuando todo queda quieto) para cortar apenas se cumple la condición.
+      const result = mode.evaluate(state);
+      if (result.status === 'finished' && !announcedRef.current) {
         announcedRef.current = true;
-        if (winnerColor === 'white') playVictory();
+        if (result.winner === humanSide) playVictory();
         else playDefeat();
-        onWin?.(winnerColor);
-        setWinner(winnerColor);
+        onFinish?.(result);
+        setOutcome(result);
       }
     },
   });
 
   const handleRestart = () => {
-    gameStateRef.current = createClassicState();
+    gameStateRef.current = mode.createInitialState();
     announcedRef.current = false;
-    setWinner(null);
+    setOutcome(null);
   };
 
   const { pucks, elastics } = gameStateRef.current;
@@ -140,11 +146,11 @@ export default function Board({ onWin }: BoardProps) {
       className="relative mx-auto w-full max-w-[420px] touch-none select-none rounded-xl bg-amber-800 shadow-xl"
       style={{ aspectRatio: `${width} / ${height}` }}
       onPointerDown={(e) => {
-        // Con un ganador ya decidido, el WinBanner (su botón "Jugar de nuevo" incluido)
+        // Con la partida ya terminada, el WinBanner (su botón "Jugar de nuevo" incluido)
         // vive dentro de este mismo <div>. Si igual capturáramos el puntero acá, el
         // navegador no llega a sintetizar el "click" sobre el botón — por eso cortamos
-        // antes de hacer nada cuando la partida ya terminó.
-        if (winner) return;
+        // antes de hacer nada cuando ya hay resultado.
+        if (outcome) return;
         // Capturamos el puntero: así seguimos recibiendo move/up aunque el dedo o el
         // mouse salgan del <div> (el tablero es chico, 420px) — antes, salir del área
         // disparaba onPointerLeave y soltaba el disco de golpe, cortando en seco el
@@ -204,7 +210,7 @@ export default function Board({ onWin }: BoardProps) {
         ))}
       </div>
 
-      {winner && <WinBanner winner={winner} onRestart={handleRestart} />}
+      {outcome && <WinBanner winner={outcome.winner} reason={outcome.reason} onRestart={handleRestart} />}
     </div>
   );
 }

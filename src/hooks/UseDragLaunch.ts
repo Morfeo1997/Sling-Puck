@@ -1,15 +1,16 @@
 import { useCallback, useRef, type MutableRefObject } from 'react';
-import type { GameState, Puck, PuckColor, Vec2 } from '../engine/types';
+import type { GameState, Puck, Side, Vec2 } from '../engine/types';
 import { isWithinCaptureRadius, clampToMaxStretch, releaseElastic } from '../engine/Elastic';
 import { clampToOwnHalf } from '../engine/Geometry';
+import { isOnSide } from '../engine/Sides';
 
 /**
  * Fase 1: el jugador lleva el disco de la mano por el tablero, todavía sin tocar
  * ningún elástico — se mueve libre, siguiendo al puntero.
  *
- * Fase 2: el disco entró al radio de captura de un elástico de su mismo color y
- * quedó enganchado — a partir de acá, arrastrar estira el elástico (con tope
- * máximo) en vez de mover el disco libremente.
+ * Fase 2: el disco entró al radio de captura del elástico de su lado y quedó
+ * enganchado — a partir de acá, arrastrar estira el elástico (con tope máximo) en
+ * vez de mover el disco libremente.
  */
 type DragPhase =
   | { kind: 'carrying'; puckId: string }
@@ -18,8 +19,10 @@ type DragPhase =
 interface UseDragLaunchOptions {
   /** Ref mutable al estado del juego (el mismo que muta stepPhysics cada frame). */
   gameStateRef: MutableRefObject<GameState>;
-  /** Solo se pueden agarrar discos de este color — el jugador no puede mover los del rival. */
-  playerColor: PuckColor;
+  /** Lado que controla el jugador: su elástico y su mitad del tablero. */
+  playerSide: Side;
+  /** Regla de propiedad del modo: qué discos puede agarrar este lado. */
+  canGrab: (puck: Puck, side: Side, state: GameState) => boolean;
   /** Convierte coordenadas de puntero (pantalla) a coordenadas lógicas del tablero. */
   toBoardCoords: (clientX: number, clientY: number) => Vec2;
   /** Se dispara cuando un disco sale de la honda — para animar el chasquido del elástico en la UI. */
@@ -37,28 +40,28 @@ interface UseDragLaunchOptions {
 const MAX_GRAB_SPEED = 150;
 
 function findLoosePuckAt(
-  pucks: Puck[],
+  state: GameState,
   pos: Vec2,
-  color: PuckColor,
-  board: GameState['board']
+  side: Side,
+  canGrab: UseDragLaunchOptions['canGrab']
 ): Puck | undefined {
-  const midY = board.height / 2;
-  return pucks.find(
+  return state.pucks.find(
     (p) =>
-      p.color === color &&
+      canGrab(p, side, state) &&
       !p.frozen &&
       Math.hypot(p.vel.x, p.vel.y) <= MAX_GRAB_SPEED &&
       // Solo los que siguen en la mitad propia: con la regla relajada, un disco que
       // acaba de cruzar y aún se desliza podría agarrarse y "teletransportarse" de
       // vuelta por clampToOwnHalf.
-      (color === 'white' ? p.pos.y > midY : p.pos.y < midY) &&
+      isOnSide(p.pos, side, state.board) &&
       Math.hypot(p.pos.x - pos.x, p.pos.y - pos.y) < p.radius + 8
   );
 }
 
 export function useDragLaunch({
   gameStateRef,
-  playerColor,
+  playerSide,
+  canGrab,
   toBoardCoords,
   onFire,
   onLoad,
@@ -69,7 +72,7 @@ export function useDragLaunch({
     (clientX: number, clientY: number) => {
       const pos = toBoardCoords(clientX, clientY);
       const state = gameStateRef.current;
-      const puck = findLoosePuckAt(state.pucks, pos, playerColor, state.board);
+      const puck = findLoosePuckAt(state, pos, playerSide, canGrab);
       if (!puck) return;
       // Si todavía se estaba deslizando, lo frenamos al agarrarlo: mientras está
       // "frozen" la física no lo integra, pero su velocidad vieja seguiría contando
@@ -79,7 +82,7 @@ export function useDragLaunch({
       puck.frozen = true;
       dragRef.current = { kind: 'carrying', puckId: puck.id };
     },
-    [gameStateRef, playerColor, toBoardCoords]
+    [gameStateRef, playerSide, canGrab, toBoardCoords]
   );
 
   const onPointerMove = useCallback(
@@ -96,12 +99,12 @@ export function useDragLaunch({
       if (drag.kind === 'carrying') {
         // Nunca deja cruzar la línea media de la mano — la única forma de pasar un
         // disco al otro lado es disparándolo, no arrastrándolo hasta ahí.
-        const clamped = clampToOwnHalf(pos, puck.color, state.board, puck.radius);
+        const clamped = clampToOwnHalf(pos, playerSide, state.board, puck.radius);
         puck.pos.x = clamped.x;
         puck.pos.y = clamped.y;
 
         const elastic = state.elastics.find(
-          (e) => e.color === puck.color && e.loadedPuckId === null && isWithinCaptureRadius(clamped, e)
+          (e) => e.side === playerSide && e.loadedPuckId === null && isWithinCaptureRadius(clamped, e)
         );
         if (elastic) {
           elastic.loadedPuckId = puck.id;
@@ -119,12 +122,12 @@ export function useDragLaunch({
       // Mismo límite que en 'carrying': estirar hacia el centro en vez de hacia la
       // pared propia tampoco puede empujar al disco más allá de la línea media
       // mientras todavía no se disparó.
-      const clamped = clampToOwnHalf(stretched, puck.color, state.board, puck.radius);
+      const clamped = clampToOwnHalf(stretched, playerSide, state.board, puck.radius);
       elastic.pouchPos = clamped;
       puck.pos.x = clamped.x;
       puck.pos.y = clamped.y;
     },
-    [gameStateRef, toBoardCoords, onLoad]
+    [gameStateRef, playerSide, toBoardCoords, onLoad]
   );
 
   const onPointerUp = useCallback(() => {
