@@ -1,12 +1,19 @@
 export type Vec2 = { x: number; y: number };
 
+/** Color visual de un disco. Ya no define de quién es: eso lo decide `owner`. */
 export type PuckColor = 'white' | 'black';
+
+/** Lado del tablero. 'bottom' es el del jugador humano y 'top' el del rival. */
+export type Side = 'top' | 'bottom';
 
 export interface Puck {
   id: string;
   pos: Vec2;
   vel: Vec2;
+  /** Solo visual (blanco / negro). */
   color: PuckColor;
+  /** Lado que puede cargarlo y dispararlo. null = neutral (lo definirá cada modo). */
+  owner: Side | null;
   radius: number;
   /** 0..1, usado por la UI para el destello al chocar. Lo decrementa el motor, lo dibuja React. */
   flash: number;
@@ -31,8 +38,8 @@ export interface GameState {
 
 export interface ElasticBand {
   id: string;
-  /** El elástico de un color solo puede cargar/disparar discos de ese mismo color. */
-  color: PuckColor;
+  /** Lado al que pertenece: carga y dispara los discos que ese lado pueda agarrar. */
+  side: Side;
   /** Posición de reposo del bolsillo (sin estirar). */
   restPos: Vec2;
   /** Posición actual del bolsillo: igual a restPos salvo mientras está cargado y se estira. */
@@ -56,16 +63,4 @@ export interface PhysicsConfig {
   minVelocity: number;
   /** Restitución (0-1) al rebotar contra muros/bordes. */
   wallRestitution: number;
-}
-
-/**
- * Contrato que implementa cada modo de juego (clásico, puntos, etc.). Home.tsx puede
- * mapear una lista de GameMode a rutas/cards sin conocer las reglas de cada uno.
- */
-export interface GameMode {
-  id: string;
-  label: string;
-  initialState: () => GameState;
-  /** Devuelve el color ganador, o null si la partida sigue en curso. */
-  checkWin: (state: GameState) => PuckColor | null;
 }
