@@ -1,5 +1,5 @@
-import type { GameMode } from './types';
-import { classicMode } from './Classic';
+import type { GameMode } from './Types';
+import { classicMode } from './classic';
 
 /**
  * Un modo nuevo se agrega acá y listo: Home arma su tarjeta y la ruta /:modeId
