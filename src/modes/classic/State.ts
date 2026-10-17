@@ -1,13 +1,5 @@
-import type { BoardConfig, GameState } from '../../engine/types';
-import { makeElastic, makePuckRow } from '../../engine/Layout';
-
-export const CLASSIC_BOARD: BoardConfig = {
-  width: 480,
-  height: 680,
-  slotLeft: 160,
-  slotRight: 320,
-  wallThickness: 14,
-};
+import type { GameState } from '../../engine/types';
+import { STANDARD_BOARD, makeElastic, makePuckRow } from '../../engine/Layout';
 
 const PUCK_RADIUS = 20;
 const PUCKS_PER_SIDE = 6;
@@ -24,21 +16,21 @@ const ELASTIC = {
   power: 10,
 };
 
-/** 6 discos por lado y un elástico por lado, delante de la fila. */
+/** 6 discos por lado (cada uno es de su lado) y un elástico por lado, delante de la fila. */
 export function createClassicState(): GameState {
-  const board = CLASSIC_BOARD;
+  const board = STANDARD_BOARD;
   return {
     board,
     pucks: [
       ...makePuckRow(board, {
-        side: 'bottom',
+        owner: 'bottom',
         color: 'white',
         count: PUCKS_PER_SIDE,
         y: board.height - ROW_MARGIN_FROM_WALL,
         radius: PUCK_RADIUS,
       }),
       ...makePuckRow(board, {
-        side: 'top',
+        owner: 'top',
         color: 'black',
         count: PUCKS_PER_SIDE,
         y: ROW_MARGIN_FROM_WALL,

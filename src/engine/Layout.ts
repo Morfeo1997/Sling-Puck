@@ -1,7 +1,17 @@
 import type { BoardConfig, ElasticBand, Puck, PuckColor, Side } from './types';
 
+/** Tablero estándar: 480×680 con muro central y una ranura en el medio. */
+export const STANDARD_BOARD: BoardConfig = {
+  width: 480,
+  height: 680,
+  slotLeft: 160,
+  slotRight: 320,
+  wallThickness: 14,
+};
+
 interface PuckRowOptions {
-  side: Side;
+  /** Quién puede mover estos discos: un lado, o null si son neutrales (la propiedad la decide la posición). */
+  owner: Side | null;
   color: PuckColor;
   count: number;
   /** Altura (y) de la fila. */
@@ -10,13 +20,13 @@ interface PuckRowOptions {
 }
 
 /** Fila de discos repartidos a lo ancho del tablero. Los ids son `${color}-${n}`. */
-export function makePuckRow(board: BoardConfig, { side, color, count, y, radius }: PuckRowOptions): Puck[] {
+export function makePuckRow(board: BoardConfig, { owner, color, count, y, radius }: PuckRowOptions): Puck[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `${color}-${i}`,
     pos: { x: (board.width / (count + 1)) * (i + 1), y },
     vel: { x: 0, y: 0 },
     color,
-    owner: side,
+    owner,
     radius,
     flash: 0,
   }));

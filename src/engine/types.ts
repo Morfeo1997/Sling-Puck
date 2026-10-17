@@ -64,3 +64,6 @@ export interface PhysicsConfig {
   /** Restitución (0-1) al rebotar contra muros/bordes. */
   wallRestitution: number;
 }
+
+/** Regla de propiedad de un modo: ¿puede este lado cargar y disparar este disco? */
+export type GrabRule = (puck: Puck, side: Side, state: GameState) => boolean;
