@@ -6,6 +6,9 @@ export type PuckColor = 'white' | 'black';
 /** Lado del tablero. 'bottom' es el del jugador humano y 'top' el del rival. */
 export type Side = 'top' | 'bottom';
 
+/** Tipo de disco: 'standard' es el común; 'bomb' lleva mecha y lo dibuja una vista propia. */
+export type PuckKind = 'standard' | 'bomb';
+
 export interface Puck {
   id: string;
   pos: Vec2;
@@ -14,6 +17,9 @@ export interface Puck {
   color: PuckColor;
   /** Lado que puede cargarlo y dispararlo. null = neutral (lo definirá cada modo). */
   owner: Side | null;
+  kind: PuckKind;
+  /** Solo para kind 'bomb': instante (en segundos de GameState.time) en que explota. */
+  fuseEndsAt?: number;
   radius: number;
   /** 0..1, usado por la UI para el destello al chocar. Lo decrementa el motor, lo dibuja React. */
   flash: number;
@@ -31,6 +37,11 @@ export interface BoardConfig {
 }
 
 export interface GameState {
+  /**
+   * Segundos de partida transcurridos, en tiempo real. Lo avanza useGameLoop en cada
+   * cuadro y se detiene cuando el loop se pausa (partida terminada).
+   */
+  time: number;
   pucks: Puck[];
   elastics: ElasticBand[];
   board: BoardConfig;

@@ -21,6 +21,7 @@ export function createClassicState(): GameState {
   const board = STANDARD_BOARD;
   return {
     board,
+    time: 0,
     pucks: [
       ...makePuckRow(board, {
         owner: 'bottom',

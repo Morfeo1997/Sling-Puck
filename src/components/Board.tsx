@@ -41,6 +41,16 @@ export default function Board({ mode, humanSide, onFinish }: BoardProps) {
   // varios cuadros seguidos hasta que `paused` corte el loop — este ref evita repetir
   // el sonido y el onFinish() de más.
   const announcedRef = useRef(false);
+  // El banner puede aparecer con demora (mode.bannerDelayMs) para dejar ver la animación final.
+  const [bannerVisible, setBannerVisible] = useState(false);
+  useEffect(() => {
+    if (!outcome) {
+      setBannerVisible(false);
+      return;
+    }
+    const id = setTimeout(() => setBannerVisible(true), mode.bannerDelayMs ?? 0);
+    return () => clearTimeout(id);
+  }, [outcome, mode.bannerDelayMs]);
 
   // Refs a los nodos reales: el game loop los mueve a mano, sin pasar por setState.
   const puckRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -192,25 +202,39 @@ export default function Board({ mode, humanSide, onFinish }: BoardProps) {
         ))}
 
         {/* Discos: posición inicial vía style, después el game loop la actualiza por ref */}
-        {pucks.map((puck) => (
-          <div
-            key={puck.id}
-            ref={(el) => {
-              puckRefs.current[puck.id] = el;
-            }}
-            className={`absolute left-0 top-0 rounded-full border-2 ${
-              puck.color === 'white' ? 'border-neutral-400 bg-neutral-50' : 'border-black bg-neutral-900'
-            }`}
-            style={{
-              width: puck.radius * 2,
-              height: puck.radius * 2,
-              transform: `translate(${puck.pos.x - puck.radius}px, ${puck.pos.y - puck.radius}px)`,
-            }}
-          />
-        ))}
+        {pucks.map((puck) => {
+          // Un modo puede dibujar ciertos discos a su manera (la bomba); si devuelve null,
+          // se usa el disco estándar. El contenedor sigue siendo el mismo: la posición y
+          // el destello de choque los maneja Board igual para todos.
+          const custom = mode.renderPuck?.(puck, gameStateRef) ?? null;
+          return (
+            <div
+              key={puck.id}
+              ref={(el) => {
+                puckRefs.current[puck.id] = el;
+              }}
+              className={`absolute left-0 top-0 rounded-full ${
+                custom
+                  ? ''
+                  : `border-2 ${
+                      puck.color === 'white' ? 'border-neutral-400 bg-neutral-50' : 'border-black bg-neutral-900'
+                    }`
+              }`}
+              style={{
+                width: puck.radius * 2,
+                height: puck.radius * 2,
+                transform: `translate(${puck.pos.x - puck.radius}px, ${puck.pos.y - puck.radius}px)`,
+              }}
+            >
+              {custom}
+            </div>
+          );
+        })}
       </div>
 
-      {outcome && <WinBanner winner={outcome.winner} reason={outcome.reason} onRestart={handleRestart} />}
+      {outcome && bannerVisible && (
+        <WinBanner winner={outcome.winner} reason={outcome.reason} onRestart={handleRestart} />
+      )}
     </div>
   );
 }

@@ -22,6 +22,7 @@ export function createFullAttackState(): GameState {
   const board = STANDARD_BOARD;
   return {
     board,
+    time: 0,
     pucks: [
       ...makePuckRow(board, {
         owner: null,

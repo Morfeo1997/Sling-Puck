@@ -50,8 +50,12 @@ export function useGameLoop({ gameStateRef, onFrame, onSettle, dt = 1 / 60, paus
   useEffect(() => {
     if (paused) return;
 
-    const tick = () => {
+    const tick = (_time: number, deltaMs: number) => {
       const state = gameStateRef.current;
+      // El reloj de la partida va en tiempo real, no en cuadros: la mecha de la bomba
+      // dura lo mismo en una pantalla de 60 Hz que en una de 144 Hz. El tope evita un
+      // salto enorme al volver de otra pestaña.
+      state.time += Math.min(deltaMs / 1000, 0.1);
       const { moving, collisions } = stepPhysics(state, dt);
       onFrameRef.current(state, { collisions });
       if (wasMovingRef.current && !moving) {

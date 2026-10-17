@@ -27,6 +27,7 @@ export function makePuckRow(board: BoardConfig, { owner, color, count, y, radius
     vel: { x: 0, y: 0 },
     color,
     owner,
+    kind: 'standard' as const,
     radius,
     flash: 0,
   }));

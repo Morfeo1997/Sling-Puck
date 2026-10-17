@@ -1,7 +1,7 @@
 import type { GameState, Side } from '../../engine/types';
-import { createPickAiShot, planShot, type AiShotPlan, type AiTuning } from '../../engine/ai';
-import { isOnSide } from '../../engine/sides';
-import { canGrabBomb, findBomb } from './rules';
+import { createPickAiShot, planShot, type AiShotPlan, type AiTuning } from '../../engine/Ai';
+import { isOnSide } from '../../engine/Sides';
+import { canGrabBomb, findBomb } from './Rules';
 
 /**
  * Con la bomba en juego tira más fuerte que con un disco común. El error lateral está
