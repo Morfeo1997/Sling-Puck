@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import Board from '../components/Board';
-import type { Side } from '../engine/types';
+import type { GameState, Side } from '../engine/types';
 import { getMode } from '../modes/Registry';
 import type { FinishedOutcome, GameMode } from '../modes/Types';
 
@@ -12,6 +12,13 @@ function GameScreen({ mode }: { mode: GameMode }) {
   // Vive acá y no en Board: tiene que sobrevivir a cada "Jugar de nuevo",
   // que solo reinicia el estado de la partida, no el marcador de la sesión.
   const [score, setScore] = useState<Record<Side, number>>({ bottom: 0, top: 0 });
+
+  // El estado de la partida también vive acá, para que el HUD del modo (goles, cronómetro)
+  // pueda leerlo. Board lo reemplaza en cada "Jugar de nuevo".
+  const gameStateRef = useRef<GameState>(null!);
+  if (gameStateRef.current === null) {
+    gameStateRef.current = mode.createInitialState();
+  }
 
   const handleFinish = (outcome: FinishedOutcome) => {
     setScore((prev) => ({ ...prev, [outcome.winner]: prev[outcome.winner] + 1 }));
@@ -32,7 +39,8 @@ function GameScreen({ mode }: { mode: GameMode }) {
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-neutral-900" />
         </div>
       </div>
-      <Board mode={mode} humanSide={HUMAN_SIDE} onFinish={handleFinish} />
+      {mode.renderHud?.(gameStateRef)}
+      <Board mode={mode} humanSide={HUMAN_SIDE} gameStateRef={gameStateRef} onFinish={handleFinish} />
     </div>
   );
 }

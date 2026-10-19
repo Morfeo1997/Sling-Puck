@@ -1,4 +1,4 @@
-import type { GameMode } from '../types';
+import type { GameMode } from '../Types';
 import { createPickAiShot } from '../../engine/Ai';
 import { createClassicState } from './State';
 import { evaluateClassic, canGrabClassic } from './Rules';
@@ -10,5 +10,5 @@ export const classicMode: GameMode = {
   createInitialState: createClassicState,
   evaluate: evaluateClassic,
   canGrab: canGrabClassic,
-  pickAiShot: createPickAiShot(canGrabClassic),
+  pickAiAction: createPickAiShot(canGrabClassic),
 };

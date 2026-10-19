@@ -11,7 +11,7 @@ export const bombMode: GameMode = {
   createInitialState: createBombState,
   evaluate: evaluateBomb,
   canGrab: canGrabBomb,
-  pickAiShot: pickBombAiShot,
+  pickAiAction: pickBombAiShot,
   renderPuck: (puck, gameStateRef) =>
     puck.kind === 'bomb' ? <BombView gameStateRef={gameStateRef} puckId={puck.id} /> : null,
   // Deja ver la explosión antes de tapar el tablero con el banner.

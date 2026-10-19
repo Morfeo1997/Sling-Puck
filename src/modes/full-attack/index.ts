@@ -10,5 +10,5 @@ export const fullAttackMode: GameMode = {
   createInitialState: createFullAttackState,
   evaluate: evaluateFullAttack,
   canGrab: canGrabFullAttack,
-  pickAiShot: createPickAiShot(canGrabFullAttack),
+  pickAiAction: createPickAiShot(canGrabFullAttack),
 };

@@ -6,6 +6,8 @@ import { stepPhysics, type CollisionEvent } from '../engine/Physics';
 interface FrameInfo {
   /** Choques disco-disco ocurridos en este cuadro (puede estar vacío la mayoría de las veces). */
   collisions: CollisionEvent[];
+  /** Segundos reales transcurridos desde el cuadro anterior (con tope), el mismo que avanza GameState.time. */
+  dt: number;
 }
 
 interface UseGameLoopOptions {
@@ -55,9 +57,10 @@ export function useGameLoop({ gameStateRef, onFrame, onSettle, dt = 1 / 60, paus
       // El reloj de la partida va en tiempo real, no en cuadros: la mecha de la bomba
       // dura lo mismo en una pantalla de 60 Hz que en una de 144 Hz. El tope evita un
       // salto enorme al volver de otra pestaña.
-      state.time += Math.min(deltaMs / 1000, 0.1);
+      const frameDt = Math.min(deltaMs / 1000, 0.1);
+      state.time += frameDt;
       const { moving, collisions } = stepPhysics(state, dt);
-      onFrameRef.current(state, { collisions });
+      onFrameRef.current(state, { collisions, dt: frameDt });
       if (wasMovingRef.current && !moving) {
         onSettleRef.current?.(state);
       }

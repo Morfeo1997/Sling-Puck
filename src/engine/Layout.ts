@@ -4,9 +4,7 @@ import type { BoardConfig, ElasticBand, Puck, PuckColor, Side } from './types';
 export const STANDARD_BOARD: BoardConfig = {
   width: 480,
   height: 680,
-  slotLeft: 160,
-  slotRight: 320,
-  wallThickness: 14,
+  centerWall: { slotLeft: 160, slotRight: 320, thickness: 14 },
 };
 
 interface PuckRowOptions {

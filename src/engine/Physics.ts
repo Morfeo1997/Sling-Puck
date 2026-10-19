@@ -26,10 +26,12 @@ function circleIntersectsRect(
 }
 
 function centerWallBlocks(board: BoardConfig) {
-  const midY = board.height / 2 - board.wallThickness / 2;
+  const wall = board.centerWall;
+  if (!wall) return [];
+  const midY = board.height / 2 - wall.thickness / 2;
   return [
-    { rx: 0, ry: midY, rw: board.slotLeft, rh: board.wallThickness },
-    { rx: board.slotRight, ry: midY, rw: board.width - board.slotRight, rh: board.wallThickness },
+    { rx: 0, ry: midY, rw: wall.slotLeft, rh: wall.thickness },
+    { rx: wall.slotRight, ry: midY, rw: board.width - wall.slotRight, rh: wall.thickness },
   ];
 }
 

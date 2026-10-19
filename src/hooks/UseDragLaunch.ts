@@ -23,6 +23,11 @@ interface UseDragLaunchOptions {
   playerSide: Side;
   /** Regla de propiedad del modo: qué discos puede agarrar este lado. */
   canGrab: (puck: Puck, side: Side, state: GameState) => boolean;
+  /**
+   * Restricción extra del modo sobre dónde se puede soltar un disco llevado a mano
+   * (por ejemplo, que no se pueda tapar el arco). Se aplica después de limitar a la mitad propia.
+   */
+  constrainCarry?: (pos: Vec2, side: Side, state: GameState, radius: number) => Vec2;
   /** Convierte coordenadas de puntero (pantalla) a coordenadas lógicas del tablero. */
   toBoardCoords: (clientX: number, clientY: number) => Vec2;
   /** Se dispara cuando un disco sale de la honda — para animar el chasquido del elástico en la UI. */
@@ -62,6 +67,7 @@ export function useDragLaunch({
   gameStateRef,
   playerSide,
   canGrab,
+  constrainCarry,
   toBoardCoords,
   onFire,
   onLoad,
@@ -99,7 +105,8 @@ export function useDragLaunch({
       if (drag.kind === 'carrying') {
         // Nunca deja cruzar la línea media de la mano — la única forma de pasar un
         // disco al otro lado es disparándolo, no arrastrándolo hasta ahí.
-        const clamped = clampToOwnHalf(pos, playerSide, state.board, puck.radius);
+        const handPos = clampToOwnHalf(pos, playerSide, state.board, puck.radius);
+        const clamped = constrainCarry ? constrainCarry(handPos, playerSide, state, puck.radius) : handPos;
         puck.pos.x = clamped.x;
         puck.pos.y = clamped.y;
 
@@ -127,7 +134,7 @@ export function useDragLaunch({
       puck.pos.x = clamped.x;
       puck.pos.y = clamped.y;
     },
-    [gameStateRef, playerSide, toBoardCoords, onLoad]
+    [gameStateRef, playerSide, constrainCarry, toBoardCoords, onLoad]
   );
 
   const onPointerUp = useCallback(() => {
@@ -159,5 +166,14 @@ export function useDragLaunch({
     // animar el "chasquido" de vuelta escuchando onFire (ver ElasticBand.snap()).
   }, [gameStateRef, onFire]);
 
-  return { onPointerDown, onPointerMove, onPointerUp };
+  /**
+   * Olvida lo que se estaba arrastrando, sin tocar los discos ni los elásticos: lo usa el
+   * modo cuando reinicia o congela el tablero por su cuenta (por ejemplo tras un gol) y es
+   * quien deja los discos y elásticos en su estado final.
+   */
+  const cancel = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
+  return { onPointerDown, onPointerMove, onPointerUp, cancel };
 }

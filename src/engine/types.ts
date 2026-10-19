@@ -6,8 +6,8 @@ export type PuckColor = 'white' | 'black';
 /** Lado del tablero. 'bottom' es el del jugador humano y 'top' el del rival. */
 export type Side = 'top' | 'bottom';
 
-/** Tipo de disco: 'standard' es el común; 'bomb' lleva mecha y lo dibuja una vista propia. */
-export type PuckKind = 'standard' | 'bomb';
+/** Tipo de disco: 'standard' es el común; 'bomb' lleva mecha y 'ball' es la pelota del Fútbol (ambos con vista propia). */
+export type PuckKind = 'standard' | 'bomb' | 'ball';
 
 export interface Puck {
   id: string;
@@ -27,13 +27,19 @@ export interface Puck {
   frozen?: boolean;
 }
 
+/** Muro que parte el tablero al medio, con una ranura por donde pasan los discos. */
+export interface CenterWall {
+  /** El muro va de x=0 a slotLeft y de x=slotRight a width; entre medio queda la ranura. */
+  slotLeft: number;
+  slotRight: number;
+  thickness: number;
+}
+
 export interface BoardConfig {
   width: number;
   height: number;
-  /** Los muros centrales van de x=0 a slotLeft y de x=slotRight a width. Entre medio, el hueco por donde pasan los discos. */
-  slotLeft: number;
-  slotRight: number;
-  wallThickness: number;
+  /** null = sin muro central (por ejemplo, el Fútbol): los discos cruzan por cualquier parte. */
+  centerWall: CenterWall | null;
 }
 
 export interface GameState {
@@ -45,6 +51,8 @@ export interface GameState {
   pucks: Puck[];
   elastics: ElasticBand[];
   board: BoardConfig;
+  /** Estado propio del modo (marcador, fase, etc.). Solo lo lee y escribe el propio modo. */
+  modeState?: unknown;
 }
 
 export interface ElasticBand {

@@ -1,5 +1,5 @@
 import type { GameState, Side } from '../../engine/types';
-import { createPickAiShot, planShot, type AiShotPlan, type AiTuning } from '../../engine/Ai';
+import { createPickAiShot, planShot, type AiPlan, type AiTuning } from '../../engine/Ai';
 import { isOnSide } from '../../engine/Sides';
 import { canGrabBomb, findBomb } from './Rules';
 
@@ -26,7 +26,7 @@ export function pickBombAiShot(
   state: GameState,
   side: Side,
   random: () => number = Math.random
-): AiShotPlan | null {
+): AiPlan | null {
   const elastic = state.elastics.find((e) => e.side === side);
   if (!elastic || elastic.loadedPuckId !== null) return null;
 
