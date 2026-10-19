@@ -1,6 +1,6 @@
 import type { BoardConfig, GameState, Puck, Side, Vec2 } from '../../engine/types';
-import { STANDARD_BOARD, makeElastic, makePuckRow } from '../../engine/layout';
-import { BALL_RADIUS, defenseRowY, kickoffSpot } from './pitch';
+import { STANDARD_BOARD, makeElastic, makePuckRow } from '../../engine/Layout';
+import { BALL_RADIUS, defenseRowY, kickoffSpot } from './Pitch';
 
 export const BALL_ID = 'ball';
 

@@ -1,10 +1,10 @@
 import type { GameState, Puck, Side, Vec2 } from '../../engine/types';
-import { planAimedShot, type AiPlan, type AiTuning } from '../../engine/ai';
-import { clampToOwnHalf } from '../../engine/geometry';
-import { isOnSide } from '../../engine/sides';
-import { constrainFootballCarry, goalCenter } from './pitch';
-import { findBall } from './rules';
-import { footballState } from './state';
+import { planAimedShot, type AiPlan, type AiTuning } from '../../engine/Ai';
+import { clampToOwnHalf } from '../../engine/Geometry';
+import { isOnSide } from '../../engine/Sides';
+import { constrainFootballCarry, goalCenter } from './Pitch';
+import { findBall } from './Rules';
+import { footballState } from './State';
 
 /** Tiros a la pelota: potencia media y puntería con margen de error (acierta ~3 de cada 4). */
 const ATTACK_TUNING: AiTuning = { powerMin: 0.45, powerMax: 0.8, lateralSpread: 100 };

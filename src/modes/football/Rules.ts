@@ -1,7 +1,7 @@
 import type { GameState, Puck, Side } from '../../engine/types';
-import { PLAYING, type Outcome } from '../types';
-import { MATCH_SECONDS } from './pitch';
-import { footballState } from './state';
+import { PLAYING, type Outcome } from '../Types';
+import { MATCH_SECONDS } from './Pitch';
+import { footballState } from './State';
 
 export function findBall(state: GameState): Puck | undefined {
   return state.pucks.find((p) => p.kind === 'ball');

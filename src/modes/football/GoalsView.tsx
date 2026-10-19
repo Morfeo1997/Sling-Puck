@@ -1,8 +1,8 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { gsap } from 'gsap';
 import type { GameState, Side } from '../../engine/types';
-import { goalRect } from './pitch';
-import { footballState } from './state';
+import { goalRect } from './Pitch';
+import { footballState } from './State';
 
 interface GoalsViewProps {
   gameStateRef: MutableRefObject<GameState>;

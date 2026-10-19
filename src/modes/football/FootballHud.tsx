@@ -1,8 +1,8 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { gsap } from 'gsap';
 import type { GameState } from '../../engine/types';
-import { MATCH_SECONDS } from './pitch';
-import { footballState } from './state';
+import { MATCH_SECONDS } from './Pitch';
+import { footballState } from './State';
 
 interface FootballHudProps {
   gameStateRef: MutableRefObject<GameState>;
