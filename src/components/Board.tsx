@@ -198,7 +198,7 @@ export default function Board({ mode, humanSide, gameStateRef, onFinish }: Board
         {wall && (
           <>
             <div
-              className="absolute bg-amber-950"
+              className="absolute bg-linear-to-br bg-amber-950 via-amber-800 to-amber-950"
               style={{ left: 0, top: midY - wall.thickness / 2, width: wall.slotLeft, height: wall.thickness }}
             />
             <div

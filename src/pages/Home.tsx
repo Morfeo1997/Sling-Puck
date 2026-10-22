@@ -3,7 +3,7 @@ import { GAME_MODES } from '../modes/Registry';
 
 export default function Home() {
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col items-center gap-6 p-6">
+    <div className="mx-auto flex min-h-screen bg-linear-to-br bg-blue-300 via-blue-500 to-blue-800 max-w-md flex-col items-center gap-6 p-6">
       <h1 className="mt-8 text-3xl font-bold">🥌 Sling Puck</h1>
       <p className="text-center text-sm opacity-70">Elegí un modo de juego para empezar</p>
 
