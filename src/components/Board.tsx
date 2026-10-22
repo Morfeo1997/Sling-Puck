@@ -174,7 +174,7 @@ export default function Board({ mode, humanSide, gameStateRef, onFinish }: Board
   return (
     <div
       ref={wrapperRef}
-      className="relative mx-auto w-full max-w-[420px] touch-none select-none rounded-xl bg-amber-800 shadow-xl"
+      className="relative mx-auto w-full max-w-[420px] touch-none select-none rounded-xl bg-linear-to-br bg-amber-950 via-amber-800 to-amber-950 shadow-xl"
       style={{ aspectRatio: `${width} / ${height}` }}
       onPointerDown={(e) => {
         // Con la partida ya terminada, el WinBanner (su botón "Jugar de nuevo" incluido)
@@ -202,7 +202,7 @@ export default function Board({ mode, humanSide, gameStateRef, onFinish }: Board
               style={{ left: 0, top: midY - wall.thickness / 2, width: wall.slotLeft, height: wall.thickness }}
             />
             <div
-              className="absolute bg-amber-950"
+              className="absolute bg-linear-to-bl bg-amber-950 via-amber-800 to-amber-950"
               style={{
                 left: wall.slotRight,
                 top: midY - wall.thickness / 2,
